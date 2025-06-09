@@ -1,0 +1,1 @@
+// DELETE THIS FILE. Expo Router uses /app/index.js as the entry point.
