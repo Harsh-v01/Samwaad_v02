@@ -107,7 +107,7 @@ io.on('connection', (socket) => {
 });
 
 const PORT = process.env.PORT || 3000;
+
 http.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
-  console.log(`Chat server is ready to handle translations`);
+  console.log("Server running on port " + PORT);
 });
