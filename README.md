@@ -23,27 +23,7 @@ Detected dependencies (typical):
 Optional dev tools (not required):
 - nodemon
 
-# 5. System Architecture
-
-ASCII diagram:
-
-Browser UI
-   |
-   | WebSocket
-   v
-[Browser Clients] <-----> [Node.js Server (Express + WebSocket)]
-                             |
-                             | broadcast (in-memory)
-                             v
-                      All connected clients
-
-Components and data flow:
-- Browser UI: simple static page for composing and viewing messages.
-- WebSocket Connection: persistent socket between each client and server for instant messaging.
-- Node.js Server: accepts WS connections, receives messages, and broadcasts to all connected clients.
-- No database: messages are ephemeral and kept in-memory/propagated only while clients are connected.
-
-# 6. Core Features
+# 5. Core Features
 
 - Real-time messaging
   - Why it matters: instant communication for quick coordination without refreshes.
@@ -56,7 +36,7 @@ Components and data flow:
 - Auto-broadcast to all connected clients
   - Why it matters: everyone sees messages simultaneously without manual forwarding.
 
-# 7. Setup & Run Instructions
+# 6. Setup & Run Instructions
 
 1. Install Node.js (v16 or higher): https://nodejs.org/
 2. Clone the repo:
@@ -71,13 +51,13 @@ Components and data flow:
    - http://localhost:3000
 6. Open multiple browser tabs or machines on the same LAN to test real-time messaging.
 
-# 8. .env.example
+# 7. .env.example
 
 Example environment variables:
 
 PORT=3000
 
-# 9. Key Endpoints & APIs
+# 8. Key Endpoints & APIs
 
 - HTTP
   - GET /  — Serves the frontend static files (index.html, CSS, JS)
@@ -90,14 +70,14 @@ Typical message flow:
 - Client -> server: JSON { type: "message", text: "...", name?: "..." }
 - Server -> all clients: JSON { type: "broadcast", text: "...", from: "...", time?: "..." }
 
-# 10. Impact & Metrics
+# 9. Impact & Metrics
 
 - Low memory usage: small Node process and in-memory socket list only.
 - Works offline: runs on local machine / LAN with no external dependencies.
 - Near-zero latency over LAN: immediate delivery in typical local networks.
 - Practical capacity: supports ~20–50 local users in typical sessions (depends on host machine and network).
 
-# 11. What’s Next (Future Improvements)
+# 10. What’s Next (Future Improvements)
 
 Planned enhancements:
 - Username support and lightweight presence indicators
@@ -107,7 +87,7 @@ Planned enhancements:
 - Message timestamps and ordering guarantees
 - Theme support (light/dark)
 
-# 12. Final Summary
+# 11. Final Summary
 
 ChatHTML is a focused, easy-to-run demonstration of real-time messaging using plain web technologies and a minimal Node.js server. It prioritizes clarity, simplicity, and educational value, making it ideal for demos, classroom use, and small-team local collaboration.
 
