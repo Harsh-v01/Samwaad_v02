@@ -3,28 +3,8 @@ import {
   UserRound,
 } from 'lucide-react'
 
-const initials = (name = '') =>
-  name
-    .split(' ')
-    .map(
-      (part) => part[0]
-    )
-    .join('')
-    .slice(0, 2)
-    .toUpperCase()
-
-const languageNames = {
-  en: 'English',
-  hi: 'Hindi',
-  mr: 'Marathi',
-  bn: 'Bengali',
-  gu: 'Gujarati',
-  kn: 'Kannada',
-  ml: 'Malayalam',
-  ta: 'Tamil',
-  te: 'Telugu',
-  ur: 'Urdu',
-}
+import { languageNames } from '../utils/language'
+import { getInitials } from '../utils/initials'
 
 function ChatHeader({
   user,
@@ -52,7 +32,7 @@ function ChatHeader({
     <header className="chat-header">
       <div className="chat-person">
         <div className="avatar large">
-          {initials(
+          {getInitials(
             user.username
           )}
 

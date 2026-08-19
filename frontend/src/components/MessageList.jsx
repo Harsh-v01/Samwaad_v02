@@ -9,70 +9,10 @@ import {
   LoaderCircle,
 } from 'lucide-react'
 
-const languageNames = {
-  en: 'English',
-  hi: 'Hindi',
-  mr: 'Marathi',
-  bn: 'Bengali',
-  gu: 'Gujarati',
-  kn: 'Kannada',
-  ml: 'Malayalam',
-  ta: 'Tamil',
-  te: 'Telugu',
-  ur: 'Urdu',
-  as: 'Assamese',
-}
-
-const initials = (name = '') =>
-  name
-    .split(' ')
-    .map((part) => part[0])
-    .join('')
-    .slice(0, 2)
-    .toUpperCase()
-
-async function translateText(
-  text,
-  fromLanguage,
-  toLanguage
-) {
-  if (!text) return ''
-
-  if (fromLanguage === toLanguage) {
-    return text
-  }
-
-  const url =
-    `https://translate.googleapis.com/translate_a/single` +
-    `?client=gtx` +
-    `&sl=${encodeURIComponent(fromLanguage)}` +
-    `&tl=${encodeURIComponent(toLanguage)}` +
-    `&dt=t` +
-    `&q=${encodeURIComponent(text)}`
-
-  const response = await fetch(url)
-
-  if (!response.ok) {
-    throw new Error(
-      `Translation failed: ${response.status}`
-    )
-  }
-
-  const result = await response.json()
-
-  if (!result?.[0]) {
-    throw new Error(
-      'Unexpected translation response.'
-    )
-  }
-
-  return (
-    result[0]
-      .map((item) => item?.[0])
-      .filter(Boolean)
-      .join('') || text
-  )
-}
+import { translateText } from '../services/translation'
+import { languageNames } from '../utils/language'
+import { getInitials } from '../utils/initials'
+import { formatTime } from '../utils/formatTime'
 
 function MessageList({
   messages,
@@ -232,7 +172,7 @@ function MessageList({
     <section className="message-area">
       <div className="chat-intro">
         <div className="avatar large">
-          {initials(selectedUser.username)}
+          {getInitials(selectedUser.username)}
         </div>
 
         <strong>
@@ -301,7 +241,7 @@ function MessageList({
             >
               {!mine && (
                 <div className="message-avatar">
-                  {initials(
+                  {getInitials(
                     message.senderName ||
                       selectedUser.username
                   )}
@@ -320,17 +260,7 @@ function MessageList({
 
                   <div className="message-meta">
                     <time>
-                      {message.timestamp
-                        ? new Date(
-                            message.timestamp
-                          ).toLocaleTimeString(
-                            [],
-                            {
-                              hour: 'numeric',
-                              minute: '2-digit',
-                            }
-                          )
-                        : ''}
+                      {formatTime(message.timestamp)}
                     </time>
                   </div>
                 </div>

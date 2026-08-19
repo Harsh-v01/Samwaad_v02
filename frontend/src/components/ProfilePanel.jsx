@@ -8,26 +8,8 @@ import {
   X,
 } from 'lucide-react'
 
-const languages = [
-  ['en', 'English'],
-  ['hi', 'Hindi'],
-  ['mr', 'Marathi'],
-  ['bn', 'Bengali'],
-  ['gu', 'Gujarati'],
-  ['kn', 'Kannada'],
-  ['ml', 'Malayalam'],
-  ['ta', 'Tamil'],
-  ['te', 'Telugu'],
-  ['ur', 'Urdu'],
-]
-
-const initials = (name = '') =>
-  name
-    .split(' ')
-    .map((part) => part[0])
-    .join('')
-    .slice(0, 2)
-    .toUpperCase()
+import { getInitials } from '../utils/initials'
+import { languageNames } from '../utils/language'
 
 function ProfilePanel({
   username,
@@ -37,6 +19,8 @@ function ProfilePanel({
   onClose,
 }) {
   const [notifications, setNotifications] = useState(true)
+
+  const languages = Object.entries(languageNames)
 
   return (
     <div
@@ -65,7 +49,7 @@ function ProfilePanel({
 
         <div className="profile-user">
           <div className="profile-avatar">
-            {initials(username)}
+            {getInitials(username)}
           </div>
 
           <h3>{username}</h3>

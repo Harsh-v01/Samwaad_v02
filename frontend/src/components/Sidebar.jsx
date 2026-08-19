@@ -5,26 +5,8 @@ import {
   Settings,
 } from 'lucide-react'
 
-const languageNames = {
-  en: 'English',
-  hi: 'Hindi',
-  mr: 'Marathi',
-  bn: 'Bengali',
-  gu: 'Gujarati',
-  kn: 'Kannada',
-  ml: 'Malayalam',
-  ta: 'Tamil',
-  te: 'Telugu',
-  ur: 'Urdu',
-}
-
-const initials = (name) =>
-  name
-    .split(' ')
-    .map((part) => part[0])
-    .join('')
-    .slice(0, 2)
-    .toUpperCase()
+import { languageNames } from '../utils/language'
+import { getInitials } from '../utils/initials'
 
 function Sidebar({
   username,
@@ -62,7 +44,7 @@ function Sidebar({
 
       <div className="current-user">
         <div className="avatar my-avatar">
-          {initials(username)}
+          {getInitials(username)}
           <span className="status-dot online" />
         </div>
 
@@ -104,7 +86,7 @@ function Sidebar({
               onClick={() => onSelectUser(user.id)}
             >
               <div className="avatar">
-                {initials(user.username)}
+                {getInitials(user.username)}
 
                 <span className="status-dot online" />
               </div>

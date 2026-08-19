@@ -16,8 +16,7 @@
   color: var(--text);
 }
 
-.app-shell.dark,
-.welcome-screen.dark {
+.app-shell.dark {
   --background: #17181c;
   --surface: #202126;
   --surface-2: #292a30;
@@ -818,115 +817,6 @@
   font-size: 10px;
   cursor: pointer;
 }
-
-.welcome-screen {
-  --background: #f4f5f7;
-  --surface: #ffffff;
-  --border: #e5e7eb;
-  --text: #17191f;
-  --muted: #737984;
-  --accent: #5964d8;
-
-  display: grid;
-  place-items: center;
-  min-height: 100vh;
-  padding: 20px;
-  background: var(--background);
-  color: var(--text);
-}
-
-.welcome-card {
-  width: min(420px, 100%);
-  padding: 38px;
-  border: 1px solid var(--border);
-  border-radius: 18px;
-  background: var(--surface);
-  box-shadow: 0 18px 60px rgba(20, 25, 35, .07);
-}
-
-.welcome-logo {
-  display: grid;
-  place-items: center;
-  width: 52px;
-  height: 52px;
-  margin-bottom: 22px;
-  border-radius: 15px;
-  color: white;
-  background: var(--accent);
-}
-
-.welcome-label {
-  color: var(--accent);
-  font-size: 9px;
-  font-weight: 800;
-  letter-spacing: .15em;
-}
-
-.welcome-card h1 {
-  max-width: 330px;
-  margin: 8px 0;
-  font-size: 29px;
-  line-height: 1.08;
-  letter-spacing: -.04em;
-}
-
-.welcome-card > p {
-  margin: 0 0 27px;
-  color: var(--muted);
-  font-size: 11px;
-  line-height: 1.6;
-}
-
-.welcome-card form {
-  display: grid;
-  gap: 14px;
-}
-
-.welcome-card label {
-  display: grid;
-  gap: 6px;
-  color: var(--text);
-  font-size: 10px;
-  font-weight: 600;
-}
-
-.welcome-card input,
-.welcome-card select {
-  width: 100%;
-  height: 43px;
-  padding: 0 12px;
-  border: 1px solid var(--border);
-  border-radius: 9px;
-  outline: 0;
-  color: var(--text);
-  background: var(--surface);
-  font-size: 11px;
-}
-
-.welcome-card input:focus,
-.welcome-card select:focus {
-  border-color: var(--accent);
-}
-
-.welcome-card form button {
-  height: 43px;
-  margin-top: 5px;
-  border-radius: 9px;
-  color: white;
-  background: var(--accent);
-  font-size: 11px;
-  font-weight: 700;
-  cursor: pointer;
-}
-
-.welcome-card small {
-  display: block;
-  margin-top: 18px;
-  color: var(--muted);
-  font-size: 8px;
-  text-align: center;
-}
-
 @media (max-width: 760px) {
   .app-frame {
     display: block;
@@ -989,10 +879,6 @@
 
   .composer-footer {
     display: none;
-  }
-
-  .welcome-card {
-    padding: 28px 23px;
   }
 }
 .translate-action {
@@ -1081,3 +967,246 @@
     transform: scale(1);
   }
 }
+
+/* =========================================================
+   SAMVAD WORKSPACE — RECRUITER POLISH
+   ========================================================= */
+
+.app-frame {
+  grid-template-columns: 312px minmax(0, 1fr);
+}
+
+.sidebar {
+  background:
+    linear-gradient(180deg, var(--surface) 0%, var(--surface-2) 100%);
+}
+
+.sidebar-top {
+  padding: 18px 18px 15px;
+}
+
+.brand-mark {
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  box-shadow: 0 8px 22px rgba(88, 101, 216, 0.18);
+}
+
+.sidebar-top .icon-button {
+  width: 34px;
+  height: 34px;
+  border: 1px solid transparent;
+}
+
+.sidebar-top .icon-button:hover {
+  border-color: var(--border);
+}
+
+.current-user {
+  margin: 2px 14px 14px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 13px;
+  background: var(--surface);
+  box-shadow: 0 7px 20px rgba(0, 0, 0, 0.035);
+}
+
+.current-user .avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 13px;
+}
+
+.current-user-status {
+  margin-top: 5px;
+}
+
+.search-box {
+  height: 42px;
+  margin: 0 14px 20px;
+  border-radius: 11px;
+  background: var(--surface);
+}
+
+.section-heading {
+  padding: 0 18px 9px;
+}
+
+.section-heading span:last-child {
+  min-width: 20px;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  text-align: center;
+}
+
+.conversation-list {
+  padding: 0 9px;
+}
+
+.conversation {
+  min-height: 62px;
+  margin-bottom: 3px;
+  padding: 9px 10px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+}
+
+.conversation:hover {
+  border-color: var(--border);
+}
+
+.conversation.active {
+  border-color: rgba(88, 101, 216, 0.16);
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+
+.empty-people {
+  min-height: 210px;
+  justify-content: center;
+  padding: 25px;
+}
+
+.empty-people svg {
+  width: 28px;
+  height: 28px;
+  opacity: 0.7;
+}
+
+.sidebar-footer {
+  margin: 10px 14px 12px;
+  padding: 12px 4px 4px;
+}
+
+/* Main empty workspace */
+
+.empty-chat-content {
+  max-width: 520px;
+  padding: 32px;
+}
+
+.empty-chat-icon {
+  width: 58px;
+  height: 58px;
+  border: 1px solid var(--border);
+  border-radius: 17px;
+  background: var(--accent-light);
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.06);
+}
+
+.empty-chat h2 {
+  margin-top: 18px;
+  font-size: 20px;
+  letter-spacing: -0.03em;
+}
+
+.empty-chat p {
+  max-width: 390px;
+  margin: 8px auto 0;
+  font-size: 11px;
+  line-height: 1.7;
+}
+
+/* Profile/settings drawer */
+
+.profile-overlay {
+  background: rgba(8, 10, 15, 0.42);
+  backdrop-filter: blur(4px);
+}
+
+.profile-panel {
+  width: min(410px, 100%);
+  padding: 24px;
+  box-shadow: -18px 0 55px rgba(0, 0, 0, 0.12);
+  animation: samvad-panel-in 180ms ease-out;
+}
+
+.profile-header h2 {
+  font-size: 20px;
+  letter-spacing: -0.03em;
+}
+
+.profile-user {
+  padding: 28px 0 25px;
+  border-bottom: 1px solid var(--border);
+}
+
+.profile-avatar {
+  width: 82px;
+  height: 82px;
+  border-radius: 24px;
+  box-shadow: 0 12px 30px rgba(88, 101, 216, 0.2);
+}
+
+.profile-section {
+  margin-top: 24px;
+}
+
+.settings-row {
+  min-height: 60px;
+  padding: 12px 2px;
+  border-bottom-color: var(--border);
+}
+
+.settings-row:hover {
+  background: var(--surface-2);
+}
+
+.settings-row select {
+  max-width: 150px;
+  cursor: pointer;
+}
+
+.privacy-card {
+  margin-top: 24px;
+  border: 1px solid rgba(88, 101, 216, 0.12);
+}
+
+.leave-button {
+  min-height: 42px;
+  transition: background 160ms ease, border-color 160ms ease;
+}
+
+.leave-button:hover {
+  border-color: #d59aa1;
+  background: rgba(189, 77, 90, 0.06);
+}
+
+@keyframes samvad-panel-in {
+  from {
+    opacity: 0;
+    transform: translateX(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Dark workspace refinements */
+
+.app-shell.dark .sidebar {
+  background: linear-gradient(180deg, #1a1b20 0%, #17181c 100%);
+}
+
+.app-shell.dark .current-user,
+.app-shell.dark .search-box {
+  background: #1d1f25;
+}
+
+.app-shell.dark .conversation.active {
+  background: rgba(88, 101, 216, 0.12);
+}
+
+.app-shell.dark .empty-chat-icon {
+  box-shadow: none;
+}
+
+.app-shell.dark .profile-overlay {
+  background: rgba(0, 0, 0, 0.58);
+}
+
+.app-shell.dark .profile-panel {
+  box-shadow: -20px 0 60px rgba(0, 0, 0, 0.4);
+}
+
