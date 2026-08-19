@@ -20,9 +20,11 @@ import ProfilePanel from './components/ProfilePanel'
 
 import './App.css'
 
-const SERVER_URL =
+const SERVER_URL = 
   import.meta.env.VITE_SERVER_URL ||
-  'http://localhost:3000'
+  window.location.origin
+
+console.log('Samvad server:', SERVER_URL)
 
 const USERNAME_KEY =
   'samvad_username'
@@ -33,12 +35,10 @@ const LANGUAGE_KEY =
 const USER_ID_KEY =
   'samvad_user_id'
 
-const socket = io(
-  SERVER_URL,
-  {
-    autoConnect: true,
-  }
-)
+const socket = io(SERVER_URL, {
+  transports: ['websocket', 'polling'],
+  autoConnect: true,
+})
 
 function createUserId() {
   return (
