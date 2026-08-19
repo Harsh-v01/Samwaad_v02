@@ -1,6 +1,7 @@
 const express = require('express')
 const cors = require('cors')
 const http = require('http')
+const path = require('path')
 const { randomUUID } = require('crypto')
 const { Server } = require('socket.io')
 
@@ -16,7 +17,20 @@ const io = new Server(server, {
 
 app.use(cors())
 app.use(express.json())
-app.use(express.static('public'))
+
+// --------------------------------------------------
+// SERVE VITE FRONTEND
+// --------------------------------------------------
+
+const frontendPath = path.join(
+  __dirname,
+  'frontend',
+  'dist'
+)
+
+app.use(
+  express.static(frontendPath)
+)
 
 // --------------------------------------------------
 // USERS
@@ -35,75 +49,95 @@ function getConversationKey(userA, userB) {
 }
 
 // --------------------------------------------------
-// CONNECTION
+// SOCKET CONNECTION
 // --------------------------------------------------
 
 io.on('connection', (socket) => {
-  console.log(`Socket connected: ${socket.id}`)
+  console.log(
+    `Socket connected: ${socket.id}`
+  )
 
   // ------------------------------------------------
   // USER JOIN
   // ------------------------------------------------
 
-  socket.on('user_join', (userData) => {
-    const userId = String(
-      userData?.userId || ''
-    ).trim()
+  socket.on(
+    'user_join',
+    (userData) => {
+      const userId = String(
+        userData?.userId || ''
+      ).trim()
 
-    const username = String(
-      userData?.username || ''
-    ).trim()
+      const username = String(
+        userData?.username || ''
+      ).trim()
 
-    const preferredLanguage =
-      userData?.preferredLanguage || 'en'
+      const preferredLanguage =
+        userData?.preferredLanguage ||
+        'en'
 
-    if (!userId || !username) {
-      socket.emit('join_error', {
-        message: 'User information is incomplete.',
-      })
+      if (!userId || !username) {
+        socket.emit(
+          'join_error',
+          {
+            message:
+              'User information is incomplete.',
+          }
+        )
 
-      return
+        return
+      }
+
+      const user = {
+        id: userId,
+        socketId: socket.id,
+        username,
+        preferredLanguage,
+      }
+
+      users.set(
+        userId,
+        user
+      )
+
+      // Private room for this user.
+      socket.join(userId)
+
+      // Send current users.
+      socket.emit(
+        'user_list',
+        Array.from(
+          users.values()
+        ).map((item) => ({
+          id: item.id,
+          username:
+            item.username,
+          preferredLanguage:
+            item.preferredLanguage,
+        }))
+      )
+
+      // Notify other users.
+      socket.broadcast.emit(
+        'user_joined',
+        {
+          userId: user.id,
+          username:
+            user.username,
+          preferredLanguage:
+            user.preferredLanguage,
+        }
+      )
+
+      console.log(
+        `${username} joined`
+      )
+
+      console.log(
+        `Connected users: ${users.size}`
+      )
     }
-
-    const user = {
-      id: userId,
-      socketId: socket.id,
-      username,
-      preferredLanguage,
-    }
-
-    users.set(userId, user)
-
-    // Private room for this user.
-    socket.join(userId)
-
-    // Send current users to the newly connected user.
-    socket.emit(
-      'user_list',
-      Array.from(users.values()).map((item) => ({
-        id: item.id,
-        username: item.username,
-        preferredLanguage:
-          item.preferredLanguage,
-      }))
-    )
-
-    // Notify everyone else.
-    socket.broadcast.emit('user_joined', {
-      userId: user.id,
-      username: user.username,
-      preferredLanguage:
-        user.preferredLanguage,
-    })
-
-    console.log(
-      `${username} joined`
-    )
-
-    console.log(
-      `Connected users: ${users.size}`
-    )
-  })
+  )
 
   // ------------------------------------------------
   // LANGUAGE CHANGE
@@ -112,28 +146,40 @@ io.on('connection', (socket) => {
   socket.on(
     'language_change',
     (data) => {
-      const userId = data?.userId
-      const user = users.get(userId)
+      const userId =
+        data?.userId
+
+      const user =
+        users.get(userId)
 
       if (!user) return
 
-      if (user.socketId !== socket.id) {
+      if (
+        user.socketId !==
+        socket.id
+      ) {
         return
       }
 
-      const language = data?.language
+      const language =
+        data?.language
 
       if (!language) return
 
-      user.preferredLanguage = language
+      user.preferredLanguage =
+        language
 
-      users.set(userId, user)
+      users.set(
+        userId,
+        user
+      )
 
       socket.broadcast.emit(
         'user_updated',
         {
           userId: user.id,
-          preferredLanguage: language,
+          preferredLanguage:
+            language,
         }
       )
 
@@ -150,21 +196,30 @@ io.on('connection', (socket) => {
   socket.on(
     'typing_start',
     (data) => {
-      const senderId = data?.senderId
-      const recipientId = data?.recipientId
+      const senderId =
+        data?.senderId
 
-      const sender = users.get(senderId)
+      const recipientId =
+        data?.recipientId
+
+      const sender =
+        users.get(senderId)
 
       if (!sender) return
 
-      if (sender.socketId !== socket.id) {
+      if (
+        sender.socketId !==
+        socket.id
+      ) {
         return
       }
 
       if (!recipientId) return
 
       const recipient =
-        users.get(recipientId)
+        users.get(
+          recipientId
+        )
 
       if (!recipient) return
 
@@ -172,7 +227,8 @@ io.on('connection', (socket) => {
         'user_typing',
         {
           userId: senderId,
-          username: sender.username,
+          username:
+            sender.username,
         }
       )
     }
@@ -185,14 +241,21 @@ io.on('connection', (socket) => {
   socket.on(
     'typing_stop',
     (data) => {
-      const senderId = data?.senderId
-      const recipientId = data?.recipientId
+      const senderId =
+        data?.senderId
 
-      const sender = users.get(senderId)
+      const recipientId =
+        data?.recipientId
+
+      const sender =
+        users.get(senderId)
 
       if (!sender) return
 
-      if (sender.socketId !== socket.id) {
+      if (
+        sender.socketId !==
+        socket.id
+      ) {
         return
       }
 
@@ -215,36 +278,57 @@ io.on('connection', (socket) => {
     'send_message',
     (data) => {
       try {
-        const senderId = data?.senderId
-        const recipientId = data?.recipientId
+        const senderId =
+          data?.senderId
 
-        const sender = users.get(senderId)
+        const recipientId =
+          data?.recipientId
+
+        const sender =
+          users.get(
+            senderId
+          )
+
         const recipient =
-          users.get(recipientId)
+          users.get(
+            recipientId
+          )
 
         if (!sender) {
-          socket.emit('message_error', {
-            message:
-              'You are not connected to Samvad.',
-          })
+          socket.emit(
+            'message_error',
+            {
+              message:
+                'You are not connected to Samvad.',
+            }
+          )
 
           return
         }
 
-        if (sender.socketId !== socket.id) {
-          socket.emit('message_error', {
-            message:
-              'Invalid user session.',
-          })
+        if (
+          sender.socketId !==
+          socket.id
+        ) {
+          socket.emit(
+            'message_error',
+            {
+              message:
+                'Invalid user session.',
+            }
+          )
 
           return
         }
 
         if (!recipient) {
-          socket.emit('message_error', {
-            message:
-              'This person is not currently online.',
-          })
+          socket.emit(
+            'message_error',
+            {
+              message:
+                'This person is not currently online.',
+            }
+          )
 
           return
         }
@@ -255,37 +339,49 @@ io.on('connection', (socket) => {
 
         if (!text) return
 
-        // Stop typing when message is sent.
-        io.to(recipientId).emit(
+        // Stop typing.
+        io.to(
+          recipientId
+        ).emit(
           'user_stopped_typing',
           {
-            userId: senderId,
+            userId:
+              senderId,
           }
         )
 
         const message = {
           id: randomUUID(),
 
-          senderId: sender.id,
-          senderName: sender.username,
+          senderId:
+            sender.id,
 
-          recipientId: recipient.id,
-          recipientName: recipient.username,
+          senderName:
+            sender.username,
 
-          originalText: text,
+          recipientId:
+            recipient.id,
+
+          recipientName:
+            recipient.username,
+
+          originalText:
+            text,
 
           sourceLanguage:
-            sender.preferredLanguage || 'en',
+            sender.preferredLanguage ||
+            'en',
 
           targetLanguage:
-            recipient.preferredLanguage || 'en',
+            recipient.preferredLanguage ||
+            'en',
 
           timestamp:
             data?.timestamp ||
             new Date().toISOString(),
         }
 
-        // Save message.
+        // Save conversation.
         const conversationKey =
           getConversationKey(
             sender.id,
@@ -308,13 +404,19 @@ io.on('connection', (socket) => {
             conversationKey
           )
 
-        conversation.push(message)
+        conversation.push(
+          message
+        )
 
         // Keep last 500 messages.
-        if (conversation.length > 500) {
+        if (
+          conversation.length >
+          500
+        ) {
           conversation.splice(
             0,
-            conversation.length - 500
+            conversation.length -
+              500
           )
         }
 
@@ -324,8 +426,10 @@ io.on('connection', (socket) => {
           message
         )
 
-        // Send only to recipient.
-        io.to(recipient.id).emit(
+        // Send to recipient.
+        io.to(
+          recipient.id
+        ).emit(
           'receive_message',
           message
         )
@@ -357,7 +461,9 @@ io.on('connection', (socket) => {
   socket.on(
     'get_conversation',
     (data) => {
-      const userId = data?.userId
+      const userId =
+        data?.userId
+
       const recipientId =
         data?.recipientId
 
@@ -410,7 +516,8 @@ io.on('connection', (socket) => {
         'conversation_history',
         {
           recipientId,
-          messages: history,
+          messages:
+            history,
         }
       )
     }
@@ -422,9 +529,13 @@ io.on('connection', (socket) => {
 
   const heartbeat =
     setInterval(() => {
-      socket.emit('ping', {
-        time: new Date().toISOString(),
-      })
+      socket.emit(
+        'ping',
+        {
+          time:
+            new Date().toISOString(),
+        }
+      )
     }, 25000)
 
   // ------------------------------------------------
@@ -434,7 +545,8 @@ io.on('connection', (socket) => {
   socket.on(
     'disconnect',
     () => {
-      let disconnectedUser = null
+      let disconnectedUser =
+        null
 
       for (
         const [
@@ -465,6 +577,7 @@ io.on('connection', (socket) => {
           {
             userId:
               disconnectedUser.userId,
+
             username:
               disconnectedUser.username,
           }
@@ -483,7 +596,9 @@ io.on('connection', (socket) => {
         )
       }
 
-      clearInterval(heartbeat)
+      clearInterval(
+        heartbeat
+      )
 
       console.log(
         `Connected users: ${users.size}`
@@ -491,6 +606,22 @@ io.on('connection', (socket) => {
     }
   )
 })
+
+// --------------------------------------------------
+// VITE SPA FALLBACK
+// --------------------------------------------------
+
+app.get(
+  '*',
+  (req, res) => {
+    res.sendFile(
+      path.join(
+        frontendPath,
+        'index.html'
+      )
+    )
+  }
+)
 
 // --------------------------------------------------
 // START SERVER
