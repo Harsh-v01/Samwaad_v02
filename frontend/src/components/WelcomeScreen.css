@@ -786,3 +786,17 @@
     gap: 5px;
   }
 }
+/* =========================================================
+   DARK MODE — LANGUAGE DROPDOWN
+   ========================================================= */
+
+.welcome-screen.dark .language-select select {
+  background: transparent;
+  color: var(--ink);
+  color-scheme: dark;
+}
+
+.welcome-screen.dark .language-select select option {
+  background: #151515;
+  color: #f1f0ec;
+}
