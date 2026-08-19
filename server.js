@@ -1,113 +1,509 @@
-const express = require('express');
-const app = express();
-const http = require('http').createServer(app);
-// Use cors to ensure socket connections work properly
-const cors = require('cors');
-const io = require('socket.io')(http, {
+const express = require('express')
+const cors = require('cors')
+const http = require('http')
+const { randomUUID } = require('crypto')
+const { Server } = require('socket.io')
+
+const app = express()
+const server = http.createServer(app)
+
+const io = new Server(server, {
   cors: {
-    origin: "*",
-    methods: ["GET", "POST"]
-  }
-});
+    origin: '*',
+    methods: ['GET', 'POST'],
+  },
+})
 
-app.use(express.static('public'));
-app.use(cors());
+app.use(cors())
+app.use(express.json())
+app.use(express.static('public'))
 
-// Track connected users and their language preferences
-const users = {};
+// --------------------------------------------------
+// USERS
+// --------------------------------------------------
+
+const users = new Map()
+
+// --------------------------------------------------
+// CONVERSATION HISTORY
+// --------------------------------------------------
+
+const conversations = new Map()
+
+function getConversationKey(userA, userB) {
+  return [userA, userB].sort().join(':')
+}
+
+// --------------------------------------------------
+// CONNECTION
+// --------------------------------------------------
 
 io.on('connection', (socket) => {
-  console.log('A user connected:', socket.id);
+  console.log(`Socket connected: ${socket.id}`)
 
-  // Handle user joining with username and language preference
+  // ------------------------------------------------
+  // USER JOIN
+  // ------------------------------------------------
+
   socket.on('user_join', (userData) => {
-    users[socket.id] = {
-      id: socket.id,
-      username: userData.username,
-      preferredLanguage: userData.preferredLanguage || 'en'
-    };
-    
-    // Notify all users about the new user
-    io.emit('user_joined', {
-      userId: socket.id,
-      username: userData.username,
-      preferredLanguage: userData.preferredLanguage
-    });
-    
-    // Send current user list to the new user
-    socket.emit('user_list', Object.values(users));
-    
-    console.log(`User ${userData.username} (${socket.id}) joined with language ${userData.preferredLanguage}`);
-    console.log(`Current users: ${Object.keys(users).length}`);
-  });
+    const userId = String(
+      userData?.userId || ''
+    ).trim()
 
-  // Update user's language preference when changed
-  socket.on('language_change', (data) => {
-    if (users[socket.id]) {
-      users[socket.id].preferredLanguage = data.language;
-      console.log(`User ${users[socket.id].username} changed language to ${data.language}`);
+    const username = String(
+      userData?.username || ''
+    ).trim()
+
+    const preferredLanguage =
+      userData?.preferredLanguage || 'en'
+
+    if (!userId || !username) {
+      socket.emit('join_error', {
+        message: 'User information is incomplete.',
+      })
+
+      return
     }
-  });
 
-  // Handle message sending with improved reliability
-  socket.on('send_message', (data) => {
-    try {
-      // Get the sender's information
-      const sender = users[socket.id];
-      if (!sender) {
-        console.log("Error: User not found for socket", socket.id);
-        return;
+    const user = {
+      id: userId,
+      socketId: socket.id,
+      username,
+      preferredLanguage,
+    }
+
+    users.set(userId, user)
+
+    // Private room for this user.
+    socket.join(userId)
+
+    // Send current users to the newly connected user.
+    socket.emit(
+      'user_list',
+      Array.from(users.values()).map((item) => ({
+        id: item.id,
+        username: item.username,
+        preferredLanguage:
+          item.preferredLanguage,
+      }))
+    )
+
+    // Notify everyone else.
+    socket.broadcast.emit('user_joined', {
+      userId: user.id,
+      username: user.username,
+      preferredLanguage:
+        user.preferredLanguage,
+    })
+
+    console.log(
+      `${username} joined`
+    )
+
+    console.log(
+      `Connected users: ${users.size}`
+    )
+  })
+
+  // ------------------------------------------------
+  // LANGUAGE CHANGE
+  // ------------------------------------------------
+
+  socket.on(
+    'language_change',
+    (data) => {
+      const userId = data?.userId
+      const user = users.get(userId)
+
+      if (!user) return
+
+      if (user.socketId !== socket.id) {
+        return
       }
-      
-      console.log(`Received message from ${sender.username} (${socket.id}): "${data.message}"`);
-      
-      // Broadcast to all clients - using dedicated broadcast method
-      const messageData = {
-        senderId: socket.id,
-        senderName: sender.username,
-        originalText: data.message,
-        sourceLanguage: data.sourceLanguage || sender.preferredLanguage,
-        timestamp: data.timestamp || new Date().toISOString()
-      };
-      
-      // IMPORTANT: This emits to ALL connected clients INCLUDING the sender
-      io.sockets.emit('receive_message', messageData);
-      console.log(`Message broadcasted to all ${Object.keys(users).length} users`);
-    } catch (error) {
-      console.error('Error handling send_message event:', error);
+
+      const language = data?.language
+
+      if (!language) return
+
+      user.preferredLanguage = language
+
+      users.set(userId, user)
+
+      socket.broadcast.emit(
+        'user_updated',
+        {
+          userId: user.id,
+          preferredLanguage: language,
+        }
+      )
+
+      console.log(
+        `${user.username} changed language to ${language}`
+      )
     }
-  });
+  )
 
-  // Create a heartbeat to ensure connection stays alive
-  const heartbeat = setInterval(() => {
-    if (users[socket.id]) {
-      socket.emit('ping', { time: new Date().toISOString() });
+  // ------------------------------------------------
+  // TYPING START
+  // ------------------------------------------------
+
+  socket.on(
+    'typing_start',
+    (data) => {
+      const senderId = data?.senderId
+      const recipientId = data?.recipientId
+
+      const sender = users.get(senderId)
+
+      if (!sender) return
+
+      if (sender.socketId !== socket.id) {
+        return
+      }
+
+      if (!recipientId) return
+
+      const recipient =
+        users.get(recipientId)
+
+      if (!recipient) return
+
+      io.to(recipientId).emit(
+        'user_typing',
+        {
+          userId: senderId,
+          username: sender.username,
+        }
+      )
     }
-  }, 25000);
+  )
 
-  // Handle disconnection
-  socket.on('disconnect', () => {
-    if (users[socket.id]) {
-      const username = users[socket.id].username;
-      console.log(`User ${username} (${socket.id}) disconnected`);
-      
-      // Notify others about user disconnection
-      io.emit('user_left', {
-        userId: socket.id,
-        username: username
-      });
-      
-      // Remove user from users object
-      delete users[socket.id];
-      
-      // Clear heartbeat
-      clearInterval(heartbeat);
+  // ------------------------------------------------
+  // TYPING STOP
+  // ------------------------------------------------
+
+  socket.on(
+    'typing_stop',
+    (data) => {
+      const senderId = data?.senderId
+      const recipientId = data?.recipientId
+
+      const sender = users.get(senderId)
+
+      if (!sender) return
+
+      if (sender.socketId !== socket.id) {
+        return
+      }
+
+      if (!recipientId) return
+
+      io.to(recipientId).emit(
+        'user_stopped_typing',
+        {
+          userId: senderId,
+        }
+      )
     }
-  });
-});
+  )
 
-const PORT = process.env.PORT || 3000;
+  // ------------------------------------------------
+  // SEND MESSAGE
+  // ------------------------------------------------
 
-http.listen(PORT, () => {
-  console.log("Server running on port " + PORT);
-});
+  socket.on(
+    'send_message',
+    (data) => {
+      try {
+        const senderId = data?.senderId
+        const recipientId = data?.recipientId
+
+        const sender = users.get(senderId)
+        const recipient =
+          users.get(recipientId)
+
+        if (!sender) {
+          socket.emit('message_error', {
+            message:
+              'You are not connected to Samvad.',
+          })
+
+          return
+        }
+
+        if (sender.socketId !== socket.id) {
+          socket.emit('message_error', {
+            message:
+              'Invalid user session.',
+          })
+
+          return
+        }
+
+        if (!recipient) {
+          socket.emit('message_error', {
+            message:
+              'This person is not currently online.',
+          })
+
+          return
+        }
+
+        const text = String(
+          data?.message || ''
+        ).trim()
+
+        if (!text) return
+
+        // Stop typing when message is sent.
+        io.to(recipientId).emit(
+          'user_stopped_typing',
+          {
+            userId: senderId,
+          }
+        )
+
+        const message = {
+          id: randomUUID(),
+
+          senderId: sender.id,
+          senderName: sender.username,
+
+          recipientId: recipient.id,
+          recipientName: recipient.username,
+
+          originalText: text,
+
+          sourceLanguage:
+            sender.preferredLanguage || 'en',
+
+          targetLanguage:
+            recipient.preferredLanguage || 'en',
+
+          timestamp:
+            data?.timestamp ||
+            new Date().toISOString(),
+        }
+
+        // Save message.
+        const conversationKey =
+          getConversationKey(
+            sender.id,
+            recipient.id
+          )
+
+        if (
+          !conversations.has(
+            conversationKey
+          )
+        ) {
+          conversations.set(
+            conversationKey,
+            []
+          )
+        }
+
+        const conversation =
+          conversations.get(
+            conversationKey
+          )
+
+        conversation.push(message)
+
+        // Keep last 500 messages.
+        if (conversation.length > 500) {
+          conversation.splice(
+            0,
+            conversation.length - 500
+          )
+        }
+
+        // Send to sender.
+        socket.emit(
+          'receive_message',
+          message
+        )
+
+        // Send only to recipient.
+        io.to(recipient.id).emit(
+          'receive_message',
+          message
+        )
+
+        console.log(
+          `${sender.username} -> ${recipient.username}: ${text}`
+        )
+      } catch (error) {
+        console.error(
+          'Message error:',
+          error
+        )
+
+        socket.emit(
+          'message_error',
+          {
+            message:
+              'Unable to send message.',
+          }
+        )
+      }
+    }
+  )
+
+  // ------------------------------------------------
+  // GET CONVERSATION HISTORY
+  // ------------------------------------------------
+
+  socket.on(
+    'get_conversation',
+    (data) => {
+      const userId = data?.userId
+      const recipientId =
+        data?.recipientId
+
+      const currentUser =
+        users.get(userId)
+
+      if (!currentUser) {
+        socket.emit(
+          'conversation_error',
+          {
+            message:
+              'User session not found.',
+          }
+        )
+
+        return
+      }
+
+      if (
+        currentUser.socketId !==
+        socket.id
+      ) {
+        return
+      }
+
+      if (!recipientId) {
+        socket.emit(
+          'conversation_error',
+          {
+            message:
+              'No conversation selected.',
+          }
+        )
+
+        return
+      }
+
+      const conversationKey =
+        getConversationKey(
+          userId,
+          recipientId
+        )
+
+      const history =
+        conversations.get(
+          conversationKey
+        ) || []
+
+      socket.emit(
+        'conversation_history',
+        {
+          recipientId,
+          messages: history,
+        }
+      )
+    }
+  )
+
+  // ------------------------------------------------
+  // HEARTBEAT
+  // ------------------------------------------------
+
+  const heartbeat =
+    setInterval(() => {
+      socket.emit('ping', {
+        time: new Date().toISOString(),
+      })
+    }, 25000)
+
+  // ------------------------------------------------
+  // DISCONNECT
+  // ------------------------------------------------
+
+  socket.on(
+    'disconnect',
+    () => {
+      let disconnectedUser = null
+
+      for (
+        const [
+          userId,
+          user,
+        ] of users.entries()
+      ) {
+        if (
+          user.socketId ===
+          socket.id
+        ) {
+          disconnectedUser = {
+            userId,
+            ...user,
+          }
+
+          break
+        }
+      }
+
+      if (disconnectedUser) {
+        users.delete(
+          disconnectedUser.userId
+        )
+
+        socket.broadcast.emit(
+          'user_left',
+          {
+            userId:
+              disconnectedUser.userId,
+            username:
+              disconnectedUser.username,
+          }
+        )
+
+        socket.broadcast.emit(
+          'user_stopped_typing',
+          {
+            userId:
+              disconnectedUser.userId,
+          }
+        )
+
+        console.log(
+          `${disconnectedUser.username} disconnected`
+        )
+      }
+
+      clearInterval(heartbeat)
+
+      console.log(
+        `Connected users: ${users.size}`
+      )
+    }
+  )
+})
+
+// --------------------------------------------------
+// START SERVER
+// --------------------------------------------------
+
+const PORT =
+  process.env.PORT || 3000
+
+server.listen(
+  PORT,
+  () => {
+    console.log(
+      `Samvad server running on port ${PORT}`
+    )
+  }
+)
