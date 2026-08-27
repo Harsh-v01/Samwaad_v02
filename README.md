@@ -53,25 +53,6 @@ Samvad is a real-time chat application designed to help people communicate acros
 
 The frontend is organized into reusable components, React hooks, services, and utility modules, while the Node.js server manages real-time communication and active conversations.
 
-## 🚀 Run Locally
-
-```bash
-git clone https://github.com/Harsh-v01/Samwaad_v02.git
-cd Samwaad_v02
-
-npm install
-
-cd frontend
-npm install
-npm run build
-
-cd ..
-node server.js
-```
-
-Open **http://localhost:3000** in your browser.
-
-To test real-time communication, open Samvad in two separate browser sessions and join with different usernames.
 
 ## 📌 Project Status
 
